@@ -1,0 +1,5 @@
+# This image installs Pi only. Never transfer source, Git history, credentials,
+# local drafts, or queue data to a Docker daemon (which may be remote).
+**
+!Dockerfile.pi
+!.dockerignore

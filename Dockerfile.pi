@@ -1,0 +1,8 @@
+FROM node:24-bookworm-slim
+# Required explicit version, e.g. docker build --build-arg PI_VERSION=<tested-version> ...
+ARG PI_VERSION
+RUN test -n "$PI_VERSION" && npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}"
+USER node
+WORKDIR /tmp
+ENV HOME=/tmp
+ENTRYPOINT ["pi"]
