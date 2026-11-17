@@ -4,7 +4,7 @@ Lightweight Python 3.12+ standard-library service: signed GitHub webhook → SQL
 
 ## Implemented
 
-- `pull_request.review_requested` for your numeric GitHub user ID (default `4117152`), explicit repository allowlist, open/non-draft PRs. Assignee/team events are intentionally not treated as personal review requests.
+- `pull_request.review_requested` for the explicitly configured numeric GitHub user ID (`REVIEWER_ID`, required; no personal default), explicit repository allowlist, open/non-draft PRs. Assignee/team events are intentionally not treated as personal review requests.
 - HMAC-SHA256 on raw request bytes, body limit, durable SQLite WAL admission before acknowledgement.
 - Delivery and semantic deduplication; retries/backoff, failure state, crash lease recovery.
 - Re-fetch current PR before and after review; discard drafts if head SHA, open state or requested reviewer changes.

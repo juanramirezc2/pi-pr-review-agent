@@ -22,7 +22,7 @@ class Config:
     def __init__(self):
         self.secret = os.environ.get('WEBHOOK_SECRET', '')
         self.token = os.environ.get('GITHUB_TOKEN', '')
-        self.reviewer = int(os.environ.get('REVIEWER_ID', '4117152'))
+        self.reviewer = int(os.environ.get('REVIEWER_ID', '0'))
         self.repos = {s.strip().lower() for s in os.environ.get('ALLOWED_REPOS', '').split(',') if s.strip()}
         self.data = Path(os.environ.get('DATA_DIR', './data')).resolve()
         self.image = os.environ.get('PI_IMAGE', 'pr-review-pi:local')
@@ -195,8 +195,8 @@ def work_once(queue, cfg, github=None, runner=run_pi):
     return True
 
 def serve(cfg):
-    if not cfg.secret or not cfg.repos:
-        raise SystemExit('WEBHOOK_SECRET and ALLOWED_REPOS are required')
+    if not cfg.secret or not cfg.repos or cfg.reviewer <= 0:
+        raise SystemExit('WEBHOOK_SECRET, ALLOWED_REPOS and a positive REVIEWER_ID are required')
     queue = Queue(cfg.data)
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_): pass
@@ -243,8 +243,8 @@ def main():
         for row in queue.db.execute('SELECT id,repo,number,sha,status,attempts,error FROM jobs'):
             print(json.dumps(dict(row)))
         return
-    if not cfg.token or not cfg.repos:
-        raise SystemExit('GITHUB_TOKEN and ALLOWED_REPOS are required')
+    if not cfg.token or not cfg.repos or cfg.reviewer <= 0:
+        raise SystemExit('GITHUB_TOKEN, ALLOWED_REPOS and a positive REVIEWER_ID are required')
     while True:
         active = work_once(queue, cfg)
         if args.command == 'once': break
