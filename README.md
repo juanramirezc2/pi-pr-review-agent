@@ -57,6 +57,7 @@ Successful jobs write `data/draft-ID.json` with repository, PR number, exact `co
 ## Limits and safety
 
 - Diff-only: no whole-repository context, tests or dependency execution. Missing patches (binary/large files) must be reported as gaps. Oversized diffs fail closed instead of silently truncating.
+- Listings reaching 3,000 files fail closed before invoking Pi, including PRs with exactly 3,000 files. [GitHub caps the PR-files endpoint at 3,000](https://docs.github.com/en/rest/pulls/pulls#list-pull-requests-files), so an empty next page cannot prove completeness. These PRs require manual review.
 - GitHub's PR-files API reads the current PR, not an immutable SHA-pinned snapshot. Head checks before and after review reject ordinary updates, but do not prove a consistent snapshot if a PR changes and returns to the original SHA during pagination. Immutable diff capture is still needed before production publication.
 - Trigger is only the original personal review request; no polling/backfill or `synchronize` handling yet. A new commit makes an existing job stale rather than re-triggering automatically.
 - Worker max run 5 minutes, lease 15 minutes; run only one worker. Retried jobs can incur extra provider usage after a crash, but cannot duplicate public reviews because publication is absent.

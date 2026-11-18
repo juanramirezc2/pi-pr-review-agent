@@ -121,8 +121,10 @@ class GitHub:
         for page in range(1, 32):
             batch = self.get(f"/repos/{job['repo']}/pulls/{job['number']}/files?per_page=100&page={page}")
             files.extend(batch)
-            if len(files) > 3000:
-                raise ValueError('PR exceeds GitHub file limit')
+            # GitHub caps the entire listing at 3,000, even if more files exist.
+            # An empty next page cannot distinguish a complete PR from truncation.
+            if len(files) >= 3000:
+                raise ValueError('PR reaches GitHub file limit; manual review required')
             if len(batch) < 100:
                 break
         else:
