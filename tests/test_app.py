@@ -92,5 +92,31 @@ class Tests(unittest.TestCase):
         self.q.admit('a',self.job); self.cfg.repos=set()
         app.work_once(self.q,self.cfg,SimpleNamespace())
         self.assertEqual('stale',self.q.db.execute('SELECT status FROM jobs').fetchone()[0])
+    def file_pages(self, count):
+        files = [{'filename': str(i), 'status': 'modified', 'patch': '+x', 'changes': 1}
+                 for i in range(count)]
+        return [files[i:i+100] for i in range(0, count, 100)] + [[]]
+    def test_file_listing_below_cap(self):
+        api = app.GitHub('fake')
+        for count in [0, 100, 2999]:
+            with self.subTest(count=count), patch.object(api, 'get', side_effect=self.file_pages(count)):
+                self.assertEqual(count, len(json.loads(api.context(self.job))))
+    def test_file_listing_at_cap_fails_closed(self):
+        api = app.GitHub('fake')
+        # Both a 3,000-file PR and a larger capped PR can end with an empty page.
+        with patch.object(api, 'get', side_effect=self.file_pages(3000)) as get:
+            with self.assertRaisesRegex(ValueError, 'file limit'):
+                api.context(self.job)
+            self.assertEqual(30, get.call_count)
+    def test_capped_listing_never_runs_agent_or_writes_draft(self):
+        self.q.admit('a', self.job)
+        api = app.GitHub('fake')
+        with patch.object(api, 'current', return_value=True), \
+             patch.object(api, 'get', side_effect=self.file_pages(3000)), \
+             patch.object(app, 'run_pi', return_value='review') as runner:
+            app.work_once(self.q, self.cfg, api, runner)
+            self.assertEqual(0, runner.call_count)
+        self.assertFalse((self.cfg.data/'draft-1.json').exists())
+        self.assertEqual('ValueError', self.q.db.execute('SELECT error FROM jobs').fetchone()[0])
 
 if __name__=='__main__':unittest.main()
